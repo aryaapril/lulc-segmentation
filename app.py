@@ -5,6 +5,7 @@ import json
 import sys
 import time
 from datetime import date
+from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 
 import matplotlib
@@ -54,6 +55,7 @@ LMAP.set_bad(NO_DATA_COLOR)
 LEGEND = [Patch(facecolor=c, edgecolor="#808080", linewidth=0.5, label=n)
           for c, n in zip(lc.CLASS_COLORS, lc.CLASS_NAMES)] + [Patch(color=NO_DATA_COLOR, label="no data")]
 BAR_OUTLINE = dict(color="rgba(128, 128, 128, 0.6)", width=1)   # keeps the pale Bare bar visible on a white page
+NA_PROPS = "background-color: transparent; color: gray"        # empty cells in colour-graded tables (not black)
 AREA_OPTIONS = {"2.56 km × 2.56 km": 256, "5.12 km × 5.12 km": 512, "10.24 km × 10.24 km": 1024}
 ZOOM = {256: 15, 512: 14, 1024: 13}
 CUSTOM = "Custom (type or click on the map)"
@@ -64,7 +66,6 @@ PLACES = {
     "Tesla Gigafactory Grünheide, DE (forest to industry 2020–22)": (52.3960, 13.7960),
     "Berlin Brandenburg Airport, DE": (52.3667, 13.5033),
     "Leipzig, DE": (51.3397, 12.3731),
-    "Cholistan desert edge, PK (unseen arid region)": (28.0417, 70.0000),
     "Amsterdam, NL": (52.3676, 4.9041),
     "Paris, FR": (48.8566, 2.3522),
 }
@@ -784,11 +785,14 @@ with tabs[2]:
         st.dataframe(pct.assign(**{"Acquisition days": [r["n_days"] for r in results],
                                    "Valid pixels (%)": [r["valid_pct"] for r in results]})
                      .style.format("{:.2f}", na_rep="–").format("{:d}", subset=["Acquisition days"])
-                     .background_gradient(cmap="Greens", subset=lc.CLASS_NAMES, axis=None))
+                     .background_gradient(cmap="Greens", subset=lc.CLASS_NAMES, axis=None)
+                     .highlight_null(props=NA_PROPS))
         st.markdown("**Month-to-month change (pp, pixels valid in both months)**")
         lim = max(np.nanmax(np.abs(m2m.values)) if m2m.notna().any().any() else 1, 0.5)
-        st.dataframe(m2m.assign(**{"Pixels changing class (%)": gross}).style.format("{:+.2f}", na_rep="–")
-                     .background_gradient(cmap="RdBu", subset=lc.CLASS_NAMES, vmin=-lim, vmax=lim))
+        # the first month has no previous month to compare with
+        st.dataframe(m2m.assign(**{"Pixels changing class (%)": gross}).iloc[1:].style.format("{:+.2f}", na_rep="–")
+                     .background_gradient(cmap="RdBu", subset=lc.CLASS_NAMES, vmin=-lim, vmax=lim)
+                     .highlight_null(props=NA_PROPS))
     with c2:
         st.markdown(f"**Total change, {labels[first]} to {labels[last]} (pp)**")
         noise = [noise_pp.get(n, 0) for n in lc.CLASS_NAMES]
@@ -924,8 +928,9 @@ with tabs[4]:
             cmp["Difference (pp)"] = cmp["Model (%)"] - cmp["Reference (%)"]
             cmp["IoU (%)"] = np.where(m["present"], m["IoU"] * 100, np.nan)
             cmp["F1 (%)"] = np.where(m["present"], m["F1"] * 100, np.nan)
-            st.dataframe(cmp.style.format("{:.2f}").background_gradient(cmap="RdYlGn", subset=["IoU (%)", "F1 (%)"],
-                                                                        vmin=0, vmax=100))
+            st.dataframe(cmp.style.format("{:.2f}", na_rep="–")
+                         .background_gradient(cmap="RdYlGn", subset=["IoU (%)", "F1 (%)"], vmin=0, vmax=100)
+                         .highlight_null(props=NA_PROPS))
             oa_fig = go.Figure(go.Scatter(x=month_index, y=monthly_oa, mode="lines+markers", line_color="#1f6feb",
                                           hovertemplate="%{x|%b %Y}: %{y:.1f}%<extra></extra>"))
             oa_fig.add_hline(y=m["OA"] * 100, line_dash="dash", line_color="gray", annotation_text="12-month majority")
@@ -978,12 +983,15 @@ with tabs[5]:
             st.markdown(f"**Evaluation of {best['model'].iloc[0]}** (spatially independent test blocks and "
                         "regions never used in training)")
             e = st.columns(3)
-            for col, (label, s) in zip(e, [("Test mIoU", "test 2021"), ("Test mIoU, added dry/tropical regions", "test 2021 global"),
-                                           ("Unseen desert (Cholistan)", "holdout_arid 2021")]):
+            for col, (label, s, m) in zip(e, [("Test overall accuracy", "test 2021", "OA"),
+                                              ("Test mIoU", "test 2021", "mIoU"),
+                                              ("Unseen region (Rhine-Neckar), accuracy", "holdout_de 2021", "OA")]):
                 if s in best.index:
-                    col.metric(label, f"{best.loc[s, 'mIoU (%)']:.1f}%", border=True,
-                               help=f"{s}: 95% CI {best.loc[s, 'mIoU 95% CI']}, overall accuracy "
-                                    f"{best.loc[s, 'OA (%)']:.1f}%")
+                    # round half up (82.85 -> 82.9, as in the report tables; float formatting would give 82.8)
+                    value = Decimal(str(best.loc[s, f"{m} (%)"])).quantize(Decimal("0.1"), ROUND_HALF_UP)
+                    col.metric(label, f"{value}%", border=True,
+                               help=f"{s}: 95% CI {best.loc[s, f'{m} 95% CI']}; all evaluation sets in the table "
+                                    "below")
             st.dataframe(best[["OA (%)", "OA 95% CI", "mIoU (%)", "mIoU 95% CI"]], width="stretch")
             if "test 2021" in best.index:
                 names = [n for n in lc.CLASS_NAMES if f"{n} IoU" in best.columns]

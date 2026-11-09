@@ -14,7 +14,7 @@ Classes: **Forest**, **Grassland** (incl. shrubland, herbaceous wetland), **Crop
 | Code (training + prototype) | https://github.com/aryaapril/lulc-segmentation |
 | Model weights | https://huggingface.co/aryashinde/s1-lulc-unet-ctx2 (`best_model.pth`) |
 | Dataset (114,676 patches, 90 GB) | https://huggingface.co/datasets/aryashinde/s1-lulc-patches-v4 |
-| Demo video | VIDEO_LINK |
+| Demo video | https://drive.google.com/file/d/1gCmWlV9kjVi67RKwPLYbEoXSIyFrtz52/view?usp=sharing |
 
 To run the app, download `best_model.pth` into `models/`:
 
@@ -90,7 +90,7 @@ The results are shown in these tabs:
 | Class statistics | Stacked class shares, area table, month-to-month and total change in pp |
 | Change analysis | Sankey diagram and transition matrix (first → last month), how often pixels changed class, gross change compared with the model's mean apparent-change rate on the 2021 test areas (where little real change is expected; an average, not a significance test) |
 | Validation | Agreement with Esri LULC: maps, disagreement map, IoU/F1 per class, confusion matrix, agreement per month |
-| Model | Model card, test scores (all test blocks, the added dry/tropical regions, the unseen desert region), scores on every evaluation set, training curves, confusion matrices and calibration plot from `figures/v4/`, limitations |
+| Model | Model card, test scores (accuracy and mIoU on all test blocks, accuracy on the unseen Rhine-Neckar region), scores on every evaluation set, training curves, confusion matrices and calibration plot from `figures/v4/`, limitations |
 
 Exports: statistics (CSV), a GeoTIFF with the 12 monthly maps plus the majority map (UTM, 10 m), and a JSON run report.
 
