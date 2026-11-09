@@ -1,0 +1,24 @@
+# Tested with Python 3.12. Install PyTorch for your CUDA version first if you train on a GPU:
+#   https://pytorch.org/get-started/locally/
+torch>=2.5
+segmentation-models-pytorch>=0.5,<0.7
+numpy>=2.0
+scipy>=1.13
+pandas>=2.2
+matplotlib>=3.9
+xarray>=2024.6
+rasterio>=1.4
+pyproj>=3.6
+odc-stac>=0.5.3
+odc-geo>=0.5.3
+pystac-client>=0.8
+planetary-computer>=1.0
+streamlit>=1.50
+plotly>=5.24
+folium>=0.18
+streamlit-folium>=0.24
+pillow>=10.0
+python-dateutil>=2.9
+# notebooks
+jupyterlab>=4.2
+ipywidgets>=8.1

@@ -1,0 +1,24 @@
+# data and weights are published on the Hugging Face Hub (see README)
+data/
+models/
+*.pth
+*.tar
+
+# local / old material
+legacy/
+cloudflared
+package.json
+package-lock.json
+*.docx
+- (1).ipynb
+- (2).ipynb
+- (3).ipynb
+
+__pycache__/
+.ipynb_checkpoints/
+.venv/
+venv/
+.DS_Store
+figures/v2/
+*.zip
+upload.log

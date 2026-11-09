@@ -1,0 +1,6 @@
+candidate,members,context (± months),val OA (%),val mIoU (%),Forest IoU,Grassland IoU,Cropland IoU,Urban IoU,Water IoU
+Unet_ctx,1,True,82.34,72.6,71.11,62.64,81.2,65.29,82.75
+Unet_ctx2,1,2,82.95,73.57,71.69,64.51,83.0,65.66,82.98
+Ens2_ctx_ctx2,2,2,83.1,73.76,71.91,64.58,83.09,65.95,83.28
+Ens3_ctx,3,1,82.71,73.13,71.55,63.39,81.85,65.67,83.17
+Ens4_ctx2,4,2,83.01,73.59,71.85,64.23,82.65,65.91,83.33
