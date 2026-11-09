@@ -86,35 +86,39 @@ def main():
     user, code_url = sys.argv[1], sys.argv[2]
     api = HfApi()
 
+    # files already on the Hub are skipped: the Hub allows only 128 commits per hour
     model_repo = f"{user}/s1-lulc-unet-ctx2"
     api.create_repo(model_repo, repo_type="model", private=False, exist_ok=True)
-    api.upload_file(path_or_fileobj=MODEL_CARD.format(code_url=code_url).encode(), path_in_repo="README.md",
-                    repo_id=model_repo, repo_type="model")
-    api.upload_file(path_or_fileobj=str(ROOT / "models" / "best_model.pth"), path_in_repo="best_model.pth",
-                    repo_id=model_repo, repo_type="model")
+    online = set(api.list_repo_files(model_repo, repo_type="model"))
+    if "best_model.pth" not in online:
+        api.upload_file(path_or_fileobj=MODEL_CARD.format(code_url=code_url).encode(), path_in_repo="README.md",
+                        repo_id=model_repo, repo_type="model")
+        api.upload_file(path_or_fileobj=str(ROOT / "models" / "best_model.pth"), path_in_repo="best_model.pth",
+                        repo_id=model_repo, repo_type="model")
     print("weights:", f"https://huggingface.co/{model_repo}")
     if "--skip-dataset" in sys.argv:
         return
 
     data_repo = f"{user}/s1-lulc-patches-v4"
     api.create_repo(data_repo, repo_type="dataset", private=False, exist_ok=True)
-    api.upload_file(path_or_fileobj=DATASET_CARD.format(code_url=code_url).encode(), path_in_repo="README.md",
-                    repo_id=data_repo, repo_type="dataset")
-    api.upload_file(path_or_fileobj=str(DATA / "patches_meta.csv"), path_in_repo="patches_meta.csv",
-                    repo_id=data_repo, repo_type="dataset")
+    online = set(api.list_repo_files(data_repo, repo_type="dataset"))
+    if "patches_meta.csv" not in online:
+        api.upload_file(path_or_fileobj=DATASET_CARD.format(code_url=code_url).encode(), path_in_repo="README.md",
+                        repo_id=data_repo, repo_type="dataset")
+        api.upload_file(path_or_fileobj=str(DATA / "patches_meta.csv"), path_in_repo="patches_meta.csv",
+                        repo_id=data_repo, repo_type="dataset")
     print("dataset:", f"https://huggingface.co/datasets/{data_repo}")
     regions = sorted(pd.read_csv(DATA / "patches_meta.csv", usecols=["region"])["region"].unique(), key=len,
                      reverse=True)                     # longest first, so a prefix match is unambiguous
-    online = set(api.list_repo_files(data_repo, repo_type="dataset"))
     for split in SPLIT_ORDER:
         print(f"{split}: packing")
-        for shard in pack(split, regions):
-            target = f"shards/{split}/{shard.name}"
-            if target in online:
-                continue
-            api.upload_file(path_or_fileobj=str(shard), path_in_repo=target, repo_id=data_repo,
-                            repo_type="dataset")
-            print(f"  uploaded {target}", flush=True)
+        missing = [s.name for s in pack(split, regions) if f"shards/{split}/{s.name}" not in online]
+        if not missing:
+            continue
+        print(f"  uploading {len(missing)} shards in one commit", flush=True)
+        api.upload_folder(folder_path=SHARDS / split, path_in_repo=f"shards/{split}", repo_id=data_repo,
+                          repo_type="dataset", allow_patterns=missing, commit_message=f"Add {split} shards")
+        print(f"  uploaded {split}", flush=True)
     print("done:", f"https://huggingface.co/datasets/{data_repo}")
 
 
