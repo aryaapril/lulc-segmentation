@@ -11,16 +11,16 @@ Classes: **Forest**, **Grassland** (incl. shrubland, herbaceous wetland), **Crop
 
 | What | Where |
 |---|---|
-| Code (training + prototype) | https://github.com/GITHUB_USER/REPO |
-| Model weights | https://huggingface.co/HF_USER/s1-lulc-unet-ctx2 (`best_model.pth`) |
-| Dataset (114,676 patches, 90 GB) | https://huggingface.co/datasets/HF_USER/s1-lulc-patches-v4 |
+| Code (training + prototype) | https://github.com/aryaapril/lulc-segmentation |
+| Model weights | https://huggingface.co/aryashinde/s1-lulc-unet-ctx2 (`best_model.pth`) |
+| Dataset (114,676 patches, 90 GB) | https://huggingface.co/datasets/aryashinde/s1-lulc-patches-v4 |
 | Demo video | VIDEO_LINK |
 
 To run the app, download `best_model.pth` into `models/`:
 
 ```bash
 mkdir -p models
-curl -L -o models/best_model.pth https://huggingface.co/HF_USER/s1-lulc-unet-ctx2/resolve/main/best_model.pth
+curl -L -o models/best_model.pth https://huggingface.co/aryashinde/s1-lulc-unet-ctx2/resolve/main/best_model.pth
 ```
 
 The dataset can also be rebuilt from public sources with `src/01_build_dataset.ipynb`. `upload_to_hf.py` is the
